@@ -3,9 +3,32 @@
 [![CI](https://github.com/PlatformStackPulse/tf-atom-vpc-aws/actions/workflows/ci.yml/badge.svg)](https://github.com/PlatformStackPulse/tf-atom-vpc-aws/actions/workflows/ci.yml)
 ![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.6.0-blueviolet)
 
-## Purpose
+Terraform atom that creates a single AWS Virtual Private Cloud (VPC) network, labelled with the [tf-label](https://github.com/PlatformStackPulse/tf-label) naming/tagging convention.
 
-Terraform atom: AWS VPC - creates a Virtual Private Cloud network.
+## Features
+
+- Creates an `aws_vpc` with configurable CIDR block and instance tenancy.
+- DNS support and DNS hostnames toggles (`enable_dns_support`, `enable_dns_hostnames`).
+- Optional IPv6 — assign an Amazon-provided `/56` IPv6 CIDR block.
+- Consistent naming and tags via the tf-label `module.this` context (`namespace`/`environment`/`stage`/`name`/`attributes`).
+- `enabled` switch to conditionally create (or skip) all resources for feature-flagged environments.
+- Exposes VPC `id`, `arn`, `cidr_block`, default route table id, and default security group id as outputs.
+
+## Usage
+
+```hcl
+module "vpc" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-vpc-aws.git?ref=v1.0.0"
+
+  namespace  = "eg"
+  stage      = "prod"
+  name       = "platform"
+  cidr_block = "10.0.0.0/16"
+
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+}
+```
 
 ## Module Documentation
 
@@ -73,3 +96,19 @@ Terraform atom: AWS VPC - creates a Virtual Private Cloud network.
 | <a name="output_enabled"></a> [enabled](#output\_enabled) | Whether the module is enabled |
 | <a name="output_id"></a> [id](#output\_id) | ID of the VPC |
 <!-- END_TF_DOCS -->
+
+## Tests
+
+Unit tests use Terraform's native test framework with a mocked AWS provider (no real AWS calls). Assertions target plan-known values — the tf-label `id`, input pass-throughs, and the `enabled` flag — so they run offline.
+
+```bash
+# Unit tests (mocked provider, no credentials required)
+terraform init -backend=false
+terraform test -test-directory=tests/unit
+
+# Or via the Makefile
+make test-unit
+
+# Integration tests (require real AWS credentials)
+terraform test -test-directory=tests/integration
+```
